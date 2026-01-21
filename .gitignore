@@ -1,0 +1,66 @@
+############################
+# .NET / Visual Studio
+############################
+bin/
+obj/
+*.user
+*.suo
+*.userosscache
+*.sln.docstates
+.vs/
+
+############################
+# Logs
+############################
+*.log
+
+############################
+# Rider / VS Code
+############################
+.idea/
+.vscode/
+
+############################
+# ASP.NET Core
+############################
+appsettings.Development.json
+appsettings.Local.json
+
+############################
+# Entity Framework
+############################
+**/Migrations/*
+!**/Migrations/*.cs
+!**/Migrations/*Snapshot.cs
+
+############################
+# Docker
+############################
+docker-compose.override.yml
+
+############################
+# Node / React / Vite
+############################
+node_modules/
+dist/
+.env
+.env.local
+.env.development
+.env.production
+
+############################
+# OS
+############################
+.DS_Store
+Thumbs.db
+
+############################
+# Coverage / Tests
+############################
+coverage/
+TestResults/
+
+############################
+# Secrets
+############################
+*.secrets.json
