@@ -1,3 +1,7 @@
 <Solution>
   <Project Path="CineBattle.Api/CineBattle.Api.csproj" />
+  <Project Path="CineBattle.Frontend/cinebattle.frontend.esproj">
+    <Build />
+    <Deploy />
+  </Project>
 </Solution>
