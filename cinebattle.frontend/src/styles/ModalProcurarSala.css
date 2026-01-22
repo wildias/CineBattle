@@ -1,0 +1,260 @@
+.modal-content-salas {
+  background: 
+    radial-gradient(ellipse at 50% 30%, rgba(255, 80, 0, 0.3) 0%, rgba(200, 50, 0, 0.2) 25%, transparent 50%),
+    radial-gradient(ellipse at 30% 50%, rgba(255, 120, 0, 0.25) 0%, transparent 40%),
+    radial-gradient(ellipse at 70% 40%, rgba(255, 100, 20, 0.2) 0%, transparent 45%),
+    url('../assets/images/background.png'),
+    radial-gradient(circle at 50% 50%, rgba(0, 0, 0, 0.85) 0%, #000000 100%);
+  background-size: cover;
+  background-position: center;
+  background-repeat: no-repeat;
+  border-radius: 20px;
+  padding: 40px;
+  max-width: 700px;
+  width: 90%;
+  max-height: 80vh;
+  box-shadow: 0 20px 60px rgba(0, 0, 0, 0.5),
+              0 0 100px rgba(255, 80, 0, 0.3);
+  border: 2px solid rgba(255, 100, 0, 0.3);
+  position: relative;
+  animation: slideIn 0.3s ease;
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+}
+
+.modal-content-salas::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: 
+    radial-gradient(circle at 20% 20%, rgba(255, 150, 50, 0.3) 0%, transparent 20%),
+    radial-gradient(circle at 80% 30%, rgba(255, 100, 0, 0.25) 0%, transparent 25%),
+    radial-gradient(circle at 50% 10%, rgba(255, 200, 100, 0.4) 0%, rgba(255, 100, 0, 0.2) 15%, transparent 35%),
+    radial-gradient(circle at 10% 60%, rgba(200, 50, 0, 0.2) 0%, transparent 20%),
+    radial-gradient(circle at 90% 70%, rgba(180, 40, 0, 0.2) 0%, transparent 20%);
+  animation: fireGlow 4s ease-in-out infinite alternate;
+  pointer-events: none;
+  z-index: 0;
+}
+
+.modal-content-salas > * {
+  position: relative;
+  z-index: 1;
+}
+
+.modal-content-salas .modal-close {
+  position: absolute;
+  top: 15px;
+  right: 15px;
+  background: rgba(255, 80, 0, 0.2);
+  border: 1px solid rgba(255, 100, 0, 0.4);
+  color: #ff6600;
+  font-size: 24px;
+  width: 40px;
+  height: 40px;
+  border-radius: 50%;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 10;
+}
+
+.modal-content-salas .modal-close:hover {
+  background: rgba(255, 80, 0, 0.4);
+  transform: rotate(90deg);
+}
+
+.modal-body-salas {
+  flex: 1;
+  overflow-y: auto;
+  margin-bottom: 20px;
+  padding-right: 10px;
+}
+
+.modal-body-salas::-webkit-scrollbar {
+  width: 8px;
+}
+
+.modal-body-salas::-webkit-scrollbar-track {
+  background: rgba(0, 0, 0, 0.3);
+  border-radius: 10px;
+}
+
+.modal-body-salas::-webkit-scrollbar-thumb {
+  background: rgba(255, 100, 0, 0.5);
+  border-radius: 10px;
+}
+
+.modal-body-salas::-webkit-scrollbar-thumb:hover {
+  background: rgba(255, 100, 0, 0.7);
+}
+
+.loading-salas,
+.empty-salas {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 60px 20px;
+  text-align: center;
+}
+
+.loading-icon,
+.empty-icon {
+  font-size: 64px;
+  margin-bottom: 20px;
+  animation: bounce 2s infinite;
+}
+
+.loading-salas p,
+.empty-salas p {
+  color: #f0f0f0;
+  font-size: 18px;
+  margin: 5px 0;
+}
+
+.empty-subtitle {
+  color: #aaa;
+  font-size: 14px !important;
+  margin-top: 10px !important;
+}
+
+.salas-lista {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.sala-card {
+  background: rgba(0, 0, 0, 0.5);
+  border: 2px solid rgba(255, 100, 0, 0.3);
+  border-radius: 12px;
+  padding: 16px 20px;
+  transition: all 0.3s ease;
+  cursor: pointer;
+}
+
+.sala-card:not(.disabled):hover {
+  border-color: rgba(255, 100, 0, 0.6);
+  background: rgba(0, 0, 0, 0.6);
+  transform: translateX(5px);
+  box-shadow: 0 5px 20px rgba(255, 100, 0, 0.3);
+}
+
+.sala-card.disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+  border-color: rgba(100, 100, 100, 0.3);
+}
+
+.sala-info-wrapper {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+}
+
+.sala-icon-status {
+  font-size: 40px;
+  flex-shrink: 0;
+}
+
+.sala-details {
+  flex: 1;
+  min-width: 0;
+}
+
+.sala-title {
+  color: #ffd700;
+  font-size: 20px;
+  margin: 0 0 6px 0;
+  text-shadow: 0 0 10px rgba(255, 215, 0, 0.5);
+}
+
+.sala-meta {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.meta-item {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  color: #f0f0f0;
+  font-size: 14px;
+}
+
+.meta-icon {
+  font-size: 16px;
+}
+
+.sala-status-badge {
+  flex-shrink: 0;
+}
+
+.badge {
+  padding: 6px 14px;
+  border-radius: 8px;
+  font-size: 12px;
+  font-weight: 700;
+  letter-spacing: 0.5px;
+  white-space: nowrap;
+}
+
+.badge-disponivel {
+  background: rgba(34, 197, 94, 0.2);
+  color: #86efac;
+  border: 1px solid rgba(34, 197, 94, 0.4);
+}
+
+.badge-cheia {
+  background: rgba(220, 38, 38, 0.2);
+  color: #fca5a5;
+  border: 1px solid rgba(220, 38, 38, 0.4);
+}
+
+.badge-andamento {
+  background: rgba(234, 179, 8, 0.2);
+  color: #fde047;
+  border: 1px solid rgba(234, 179, 8, 0.4);
+}
+
+.modal-footer-salas {
+  display: flex;
+  justify-content: center;
+  padding-top: 10px;
+  border-top: 1px solid rgba(255, 100, 0, 0.2);
+}
+
+.btn-atualizar {
+  background: linear-gradient(135deg, #ff6600 0%, #cc5200 100%);
+  color: white;
+  border: none;
+  padding: 14px 35px;
+  font-size: 16px;
+  font-weight: 600;
+  border-radius: 10px;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  box-shadow: 0 5px 15px rgba(255, 100, 0, 0.3);
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.btn-atualizar:hover:not(:disabled) {
+  transform: translateY(-2px);
+  box-shadow: 0 8px 25px rgba(255, 100, 0, 0.5);
+  background: linear-gradient(135deg, #ff8800 0%, #ff6600 100%);
+}
+
+.btn-atualizar:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}

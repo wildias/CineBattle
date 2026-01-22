@@ -1,20 +1,36 @@
+import { useState } from 'react';
+import { useNavigate } from 'react-router-dom';
 import '../styles/HomePage.css';
 import logo from '../assets/images/logo.png';
+import ModalCriarSala from '../components/ModalCriarSala';
+import ModalProcurarSala from '../components/ModalProcurarSala';
 
 function HomePage() {
+  const navigate = useNavigate();
+  const [modalCriarSalaAberto, setModalCriarSalaAberto] = useState(false);
+  const [modalProcurarSalaAberto, setModalProcurarSalaAberto] = useState(false);
+
   const handleQuickMatch = () => {
     console.log('Partida Rápida');
     // TODO: Implementar lógica de partida rápida
   };
 
   const handleCreateRoom = () => {
-    console.log('Criar Sala');
-    // TODO: Implementar lógica de criar sala
+    setModalCriarSalaAberto(true);
   };
 
   const handleJoinRoom = () => {
-    console.log('Procurar Sala');
-    // TODO: Implementar lógica de procurar sala
+    setModalProcurarSalaAberto(true);
+  };
+
+  const handleSalaCriada = (salaId: number) => {
+    console.log('Sala criada com ID:', salaId);
+    navigate(`/sala/${salaId}`);
+  };
+
+  const handleSalaEscolhida = (salaId: number) => {
+    console.log('Entrar na sala com ID:', salaId);
+    navigate(`/sala/${salaId}`);
   };
 
   return (
@@ -43,6 +59,18 @@ function HomePage() {
           </button>
         </div>
       </div>
+
+      <ModalCriarSala
+        isOpen={modalCriarSalaAberto}
+        onClose={() => setModalCriarSalaAberto(false)}
+        onSalaCriada={handleSalaCriada}
+      />
+
+      <ModalProcurarSala
+        isOpen={modalProcurarSalaAberto}
+        onClose={() => setModalProcurarSalaAberto(false)}
+        onSalaEscolhida={handleSalaEscolhida}
+      />
     </div>
   );
 }

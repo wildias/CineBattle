@@ -51,9 +51,7 @@ namespace CineBattle.Api.Application.Services
             };
         }
 
-        public async Task<ServiceResultDto> EntrarSalaAsync(
-    int salaId,
-    Jogador jogador)
+        public async Task<ServiceResultDto> EntrarSalaAsync(int salaId, Jogador jogador)
         {
             var result = new ServiceResultDto();
 
@@ -72,9 +70,10 @@ namespace CineBattle.Api.Application.Services
 
             sala.Jogadores.Add(jogador);
 
+            // 🔔 EVENTO ÚNICO E PADRÃO
             await _hub.Clients
                 .Group(salaId.ToString())
-                .SendAsync("JogadorEntrou", jogador);
+                .SendAsync("JogadoresAtualizados", MapearJogadores(sala));
 
             result.Sucesso = true;
             return result;
@@ -101,13 +100,19 @@ namespace CineBattle.Api.Application.Services
             sala.EmAndamento = true;
             sala.Rodada = 1;
 
+            // 🔔 EVENTO: PARTIDA INICIADA
             await _hub.Clients
                 .Group(salaId.ToString())
                 .SendAsync("PartidaIniciada", new
                 {
-                    sala.Id,
-                    sala.Rodada
+                    salaId = sala.Id,
+                    rodada = sala.Rodada
                 });
+
+            // 🔔 EVENTO: ESTADO ATUAL DOS JOGADORES
+            await _hub.Clients
+                .Group(salaId.ToString())
+                .SendAsync("JogadoresAtualizados", MapearJogadores(sala));
 
             result.Sucesso = true;
             return result;
@@ -140,9 +145,7 @@ namespace CineBattle.Api.Application.Services
             return pergunta;
         }
 
-        public async Task<RespostaResultadoDto> ResponderPerguntaAsync(
-    int salaId,
-    RespostaDto resposta)
+        public async Task<RespostaResultadoDto> ResponderPerguntaAsync(int salaId, RespostaDto resposta)
         {
             var resultado = new RespostaResultadoDto();
 
@@ -188,29 +191,82 @@ namespace CineBattle.Api.Application.Services
             }
 
             resultado.VidaRestante = jogador.Vida;
+            resultado.Sucesso = true;
+
+            // 🔔 EVENTO: RESULTADO DA RESPOSTA
+            await _hub.Clients
+                .Group(salaId.ToString())
+                .SendAsync("ResultadoResposta", new
+                {
+                    jogadorId = jogador.Id,
+                    resultado.Correta,
+                    resultado.VidaRestante,
+                    resultado.JogadorMorreu
+                });
+
+            // 🔔 EVENTO: JOGADORES ATUALIZADOS
+            await _hub.Clients
+                .Group(salaId.ToString())
+                .SendAsync("JogadoresAtualizados", MapearJogadores(sala));
 
             var vivos = sala.Jogadores.Count(j => j.Vivo);
             if (vivos <= 1)
             {
                 resultado.JogoFinalizado = true;
                 sala.EmAndamento = false;
+
+                var vencedor = sala.Jogadores.First(j => j.Vivo);
+
+                // 🔔 EVENTO: FIM DE JOGO
+                await _hub.Clients
+                    .Group(salaId.ToString())
+                    .SendAsync("FimDeJogo", new
+                    {
+                        vencedor.Id,
+                        vencedor.Nome
+                    });
             }
-
-            resultado.Sucesso = true;
-
-            // 🔔 EVENTO SIGNALR
-            await _hub.Clients
-                .Group(salaId.ToString())
-                .SendAsync("ResultadoResposta", new
-                {
-                    jogador.Id,
-                    resultado.Correta,
-                    resultado.VidaRestante,
-                    resultado.JogadorMorreu
-                });
 
             return resultado;
         }
 
+
+        public List<SalaResponseDto> BuscarSalas()
+        {
+            return _salas.Values
+                .Select(sala => new SalaResponseDto
+                {
+                    Id = sala.Id,
+                    QuantidadeJogadores = sala.Jogadores.Count,
+                    EmAndamento = sala.EmAndamento,
+                    EstaCheia = sala.EstaCheia
+                })
+                .ToList();
+        }
+
+        private List<JogadorResponseDto> ObterJogadoresDaSala(int salaId)
+        {
+            var sala = ObterSala(salaId);
+            if (sala == null) return [];
+
+            return sala.Jogadores.Select(j => new JogadorResponseDto
+            {
+                Id = j.Id,
+                Nome = j.Nome,
+                Vida = j.Vida,
+                Vivo = j.Vivo
+            }).ToList();
+        }
+
+        private List<JogadorResponseDto> MapearJogadores(Sala sala)
+        {
+            return sala.Jogadores.Select(j => new JogadorResponseDto
+            {
+                Id = j.Id,
+                Nome = j.Nome,
+                Vida = j.Vida,
+                Vivo = j.Vivo
+            }).ToList();
+        }
     }
 }

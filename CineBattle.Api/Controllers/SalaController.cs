@@ -38,9 +38,7 @@ namespace CineBattle.Api.Controllers
         }
 
         [HttpPost("entrar/{salaId}")]
-        public async Task<IActionResult> EntrarSala(
-            int salaId,
-            [FromBody] string nomeJogador)
+        public async Task<IActionResult> EntrarSala(int salaId, [FromBody] string nomeJogador)
         {
             var jogador = _salaService.CriarJogador(nomeJogador);
 
@@ -64,9 +62,7 @@ namespace CineBattle.Api.Controllers
         }
 
         [HttpGet("{salaId}/pergunta")]
-        public async Task<IActionResult> ObterPergunta(
-            int salaId,
-            [FromServices] PerguntaService perguntaService)
+        public async Task<IActionResult> ObterPergunta(int salaId, [FromServices] PerguntaService perguntaService)
         {
             var pergunta = await _salaService
                 .SortearPerguntaAsync(salaId, perguntaService);
@@ -87,6 +83,13 @@ namespace CineBattle.Api.Controllers
                 return BadRequest(resultado.Erro);
 
             return Ok(resultado);
+        }
+
+        [HttpGet("buscar")]
+        public IActionResult BuscarSalas()
+        {
+            var salas = _salaService.BuscarSalas();
+            return Ok(salas);
         }
     }
 }
