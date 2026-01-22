@@ -19,6 +19,10 @@ public class PerguntaConfiguration : IEntityTypeConfiguration<Pergunta>
         builder.Property(p => p.RespostaCorretaIndex)
             .IsRequired();
 
+        builder.Property(p => p.Nivel)
+            .IsRequired()
+            .HasConversion<int>();
+
         builder.HasMany(p => p.Opcoes)
             .WithOne(o => o.Pergunta)
             .HasForeignKey(o => o.PerguntaId)
