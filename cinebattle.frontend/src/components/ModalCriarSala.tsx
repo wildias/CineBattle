@@ -1,15 +1,16 @@
 import { useState } from 'react';
 import salaService from '../services/salaService';
-import type { CriarSalaDto } from '../services/types';
+import type { CriarSalaDto, SalaResponse } from '../services/types';
 import '../styles/ModalCriarSala.css';
 
 interface ModalCriarSalaProps {
   isOpen: boolean;
   onClose: () => void;
-  onSalaCriada: (salaId: number) => void;
+  onSalaCriada: (response: SalaResponse) => void;
 }
 
 export const ModalCriarSala = ({ isOpen, onClose, onSalaCriada }: ModalCriarSalaProps) => {
+  const [nomeJogador, setNomeJogador] = useState('');
   const [maxJogadores, setMaxJogadores] = useState(4);
   const [niveis, setNiveis] = useState<string[]>(['Facil']);
   const [loading, setLoading] = useState(false);
@@ -26,6 +27,11 @@ export const ModalCriarSala = ({ isOpen, onClose, onSalaCriada }: ModalCriarSala
   const handleCriarSala = async () => {
     setErro(null);
 
+    if (!nomeJogador.trim()) {
+      setErro('Digite seu nome');
+      return;
+    }
+
     if (niveis.length === 0) {
       setErro('Selecione pelo menos um nível de dificuldade');
       return;
@@ -35,12 +41,13 @@ export const ModalCriarSala = ({ isOpen, onClose, onSalaCriada }: ModalCriarSala
 
     try {
       const dto: CriarSalaDto = {
+        nomeJogador: nomeJogador.trim(),
         niveis,
         maxJogadores,
       };
 
       const sala = await salaService.criarSala(dto);
-      onSalaCriada(sala.id);
+      onSalaCriada(sala);
       onClose();
     } catch (error) {
       setErro(error instanceof Error ? error.message : 'Erro ao criar sala');
@@ -65,6 +72,22 @@ export const ModalCriarSala = ({ isOpen, onClose, onSalaCriada }: ModalCriarSala
         </div>
 
         <div className="modal-body">
+          {/* Nome do Jogador */}
+          <div className="form-group">
+            <label>
+              <span className="label-icon">👤</span>
+              Seu Nome
+            </label>
+            <input
+              type="text"
+              value={nomeJogador}
+              onChange={(e) => setNomeJogador(e.target.value)}
+              placeholder="Digite seu nome"
+              className="input-nome"
+              maxLength={50}
+            />
+          </div>
+
           {/* Seleção de Jogadores */}
           <div className="form-group">
             <label>

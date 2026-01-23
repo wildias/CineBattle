@@ -6,7 +6,7 @@ interface ModalEntrarSalaProps {
   isOpen: boolean;
   onClose: () => void;
   salaId: number;
-  onEntrarSucesso: (jogadorId: number) => void;
+  onEntrarSucesso: (jogadorId: number, jogadorNome: string) => void;
 }
 
 export const ModalEntrarSala = ({ isOpen, onClose, salaId, onEntrarSucesso }: ModalEntrarSalaProps) => {
@@ -25,7 +25,7 @@ export const ModalEntrarSala = ({ isOpen, onClose, salaId, onEntrarSucesso }: Mo
 
     try {
       const jogador = await salaService.entrarSala(salaId, nomeJogador.trim());
-      onEntrarSucesso(jogador.id);
+      onEntrarSucesso(jogador.id, jogador.nome);
       onClose();
     } catch (error) {
       setErro(error instanceof Error ? error.message : 'Erro ao entrar na sala');

@@ -180,6 +180,32 @@
   font-size: 20px;
 }
 
+.input-nome {
+  width: 100%;
+  padding: 15px;
+  font-size: 16px;
+  border: 2px solid rgba(255, 100, 0, 0.3);
+  border-radius: 12px;
+  background: rgba(0, 0, 0, 0.4);
+  color: #fff;
+  transition: all 0.3s ease;
+  outline: none;
+}
+
+.input-nome::placeholder {
+  color: rgba(255, 255, 255, 0.4);
+}
+
+.input-nome:hover {
+  border-color: rgba(255, 100, 0, 0.5);
+  background: rgba(0, 0, 0, 0.5);
+}
+
+.input-nome:focus {
+  border-color: #ff6600;
+  box-shadow: 0 0 20px rgba(255, 100, 0, 0.4);
+}
+
 .select-jogadores {
   width: 100%;
   padding: 15px;

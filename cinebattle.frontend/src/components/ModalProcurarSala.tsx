@@ -7,7 +7,7 @@ import '../styles/ModalProcurarSala.css';
 interface ModalProcurarSalaProps {
   isOpen: boolean;
   onClose: () => void;
-  onSalaEscolhida: (salaId: number) => void;
+  onSalaEscolhida: (salaId: number, jogadorId: number, jogadorNome: string) => void;
 }
 
 export const ModalProcurarSala = ({ isOpen, onClose, onSalaEscolhida }: ModalProcurarSalaProps) => {
@@ -42,10 +42,10 @@ export const ModalProcurarSala = ({ isOpen, onClose, onSalaEscolhida }: ModalPro
     setModalEntrarAberto(true);
   };
 
-  const handleEntrarSucesso = (jogadorId: number) => {
+  const handleEntrarSucesso = (jogadorId: number, jogadorNome: string) => {
     if (salaIdSelecionada) {
       setModalEntrarAberto(false);
-      onSalaEscolhida(salaIdSelecionada);
+      onSalaEscolhida(salaIdSelecionada, jogadorId, jogadorNome);
       onClose();
     }
   };

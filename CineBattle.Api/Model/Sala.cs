@@ -15,5 +15,8 @@ namespace CineBattle.Api.Model
         public bool PodeIniciar => Jogadores.Count >= MinJogadores;
         public int? PerguntaAtualId { get; set; }
         public NivelPergunta? NivelPerguntaAtual { get; set; }
+        public int? JogadorAtualId { get; set; }
+        public int LiderId { get; set; }
+        public List<int> PerguntasUsadas { get; set; } = [];
     }
 }

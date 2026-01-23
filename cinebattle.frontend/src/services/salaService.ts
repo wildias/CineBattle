@@ -8,6 +8,7 @@ import type {
   PerguntaResponse,
   RespostaResultado,
   SalaResponseDto,
+  JogadorSala,
 } from './types';
 
 export const salaService = {
@@ -36,6 +37,32 @@ export const salaService = {
    */
   entrarSala: async (salaId: number, nomeJogador: string): Promise<JogadorResponse> => {
     return api.post<JogadorResponse>(`/Sala/entrar/${salaId}`, nomeJogador);
+  },
+
+  /**
+   * Busca os jogadores de uma sala
+   * @param salaId - ID da sala
+   * @returns Lista de jogadores na sala
+   */
+  buscarJogadoresSala: async (salaId: number): Promise<JogadorSala[]> => {
+    return api.get<JogadorSala[]>(`/Sala/${salaId}/jogadores`);
+  },
+
+  /**   * Obtém o estado completo de uma sala
+   * @param salaId - ID da sala
+   * @returns Estado da sala incluindo se está em andamento
+   */
+  obterEstadoSala: async (salaId: number) => {
+    return api.get(`/Sala/${salaId}/estado`);
+  },
+
+  /**   * Sai de uma sala
+   * @param salaId - ID da sala
+   * @param jogadorId - ID do jogador
+   * @returns Resultado da operação
+   */
+  sairDaSala: async (salaId: number, jogadorId: number): Promise<string> => {
+    return api.post<string>(`/Sala/${salaId}/sair`, jogadorId);
   },
 
   /**

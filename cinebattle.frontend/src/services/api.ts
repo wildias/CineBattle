@@ -31,7 +31,15 @@ export const api = {
       throw new Error(error || 'Erro na requisição');
     }
 
-    return response.json();
+    // Verifica se a resposta é JSON
+    const contentType = response.headers.get('content-type');
+    if (contentType && contentType.includes('application/json')) {
+      return response.json();
+    }
+    
+    // Se não for JSON, retorna o texto como resposta
+    const text = await response.text();
+    return text as unknown as T;
   },
 
   put: async <T>(endpoint: string, data?: unknown): Promise<T> => {

@@ -1,5 +1,6 @@
 // DTOs
 export interface CriarSalaDto {
+  nomeJogador: string;
   niveis: string[];
   maxJogadores: number;
 }
@@ -11,7 +12,9 @@ export interface RespostaDto {
 
 // Responses
 export interface SalaResponse {
-  id: number;
+  salaId: number;
+  jogadorId: number;
+  jogadorNome: string;
   minJogadores: number;
   maxJogadores: number;
   niveisPermitidos: string[];
@@ -49,6 +52,6 @@ export interface SalaResponseDto {
 export interface JogadorSala {
   id: number;
   nome: string;
-  vidaAtual: number;
-  vidaTotal: number;
+  vida: number;
+  vivo: boolean;
 }

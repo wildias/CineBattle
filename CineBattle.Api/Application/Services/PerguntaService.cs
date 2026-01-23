@@ -58,13 +58,13 @@ namespace CineBattle.Api.Application.Services
             }
         }
 
-        internal async Task<PerguntaResponseDto?> ObterPerguntaAleatoriaAsync(List<NivelPergunta> niveis)
+        internal async Task<PerguntaResponseDto?> ObterPerguntaAleatoriaAsync(List<NivelPergunta> niveis, List<int> perguntasUsadas)
         {
             if (niveis == null || niveis.Count == 0)
                 return null;
 
             var pergunta = await _context.Perguntas
-                .Where(p => niveis.Contains(p.Nivel))
+                .Where(p => niveis.Contains(p.Nivel) && !perguntasUsadas.Contains(p.Id))
                 .OrderBy(x => Guid.NewGuid())
                 .Include(p => p.Opcoes)
                 .FirstOrDefaultAsync();
@@ -75,10 +75,9 @@ namespace CineBattle.Api.Application.Services
             return new PerguntaResponseDto
             {
                 Id = pergunta.Id,
-                Enunciado = pergunta.Enunciado,
+                Texto = pergunta.Enunciado,
                 Nivel = pergunta.Nivel.ToString(),
                 Opcoes = pergunta.Opcoes
-                    .OrderBy(o => Guid.NewGuid())
                     .Select(o => o.Texto)
                     .ToList()
             };

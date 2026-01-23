@@ -1,5 +1,6 @@
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
+import type { SalaResponse } from '../services/types';
 import '../styles/HomePage.css';
 import logo from '../assets/images/logo.png';
 import ModalCriarSala from '../components/ModalCriarSala';
@@ -23,14 +24,25 @@ function HomePage() {
     setModalProcurarSalaAberto(true);
   };
 
-  const handleSalaCriada = (salaId: number) => {
-    console.log('Sala criada com ID:', salaId);
-    navigate(`/sala/${salaId}`);
+  const handleSalaCriada = (response: SalaResponse) => {
+    console.log('Sala criada:', response);
+    navigate(`/sala/${response.salaId}`, {
+      state: {
+        jogadorId: response.jogadorId,
+        jogadorNome: response.jogadorNome,
+        maxJogadores: response.maxJogadores,
+      },
+    });
   };
 
-  const handleSalaEscolhida = (salaId: number) => {
-    console.log('Entrar na sala com ID:', salaId);
-    navigate(`/sala/${salaId}`);
+  const handleSalaEscolhida = (salaId: number, jogadorId: number, jogadorNome: string) => {
+    console.log('Entrar na sala:', { salaId, jogadorId, jogadorNome });
+    navigate(`/sala/${salaId}`, {
+      state: {
+        jogadorId,
+        jogadorNome,
+      },
+    });
   };
 
   return (
@@ -43,10 +55,10 @@ function HomePage() {
         </div>
 
         <div className="menu-options">
-          <button className="menu-button" onClick={handleQuickMatch}>
+          {/* <button className="menu-button" onClick={handleQuickMatch}>
             <div className="button-icon">⚡</div>
             <span className="button-text">PARTIDA RÁPIDA</span>
-          </button>
+          </button> */}
 
           <button className="menu-button" onClick={handleCreateRoom}>
             <div className="button-icon">🎬</div>

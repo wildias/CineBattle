@@ -42,12 +42,12 @@ class SignalRService {
   /**
    * Entra em uma sala
    */
-  async entrarSala(salaId: number, jogadorId: number): Promise<void> {
+  async entrarSala(salaId: number): Promise<void> {
     if (!this.connection) {
       throw new Error('Connection not established');
     }
 
-    await this.connection.invoke('EntrarSala', salaId, jogadorId);
+    await this.connection.invoke('EntrarNaSala', salaId);
   }
 
   /**
@@ -58,7 +58,15 @@ class SignalRService {
       throw new Error('Connection not established');
     }
 
-    await this.connection.invoke('SairSala', salaId);
+    await this.connection.invoke('SairDaSala', salaId);
+  }
+
+  /**
+   * Registra callback para quando a lista de jogadores for atualizada
+   */
+  onJogadoresAtualizados(callback: (jogadores: any[]) => void): void {
+    if (!this.connection) return;
+    this.connection.on('JogadoresAtualizados', callback);
   }
 
   /**
@@ -96,6 +104,14 @@ class SignalRService {
   /**
    * Registra callback para quando um jogador responder
    */
+  onResultadoResposta(callback: (resultado: any) => void): void {
+    if (!this.connection) return;
+    this.connection.on('ResultadoResposta', callback);
+  }
+
+  /**
+   * Registra callback para quando um jogador responder
+   */
   onJogadorRespondeu(callback: (resultado: any) => void): void {
     if (!this.connection) return;
     this.connection.on('JogadorRespondeu', callback);
@@ -114,7 +130,7 @@ class SignalRService {
    */
   onJogoFinalizado(callback: (vencedor: any) => void): void {
     if (!this.connection) return;
-    this.connection.on('JogoFinalizado', callback);
+    this.connection.on('FimDeJogo', callback);
   }
 
   /**
@@ -123,13 +139,15 @@ class SignalRService {
   removeAllListeners(): void {
     if (!this.connection) return;
     
+    this.connection.off('JogadoresAtualizados');
     this.connection.off('JogadorEntrou');
     this.connection.off('JogadorSaiu');
     this.connection.off('PartidaIniciada');
     this.connection.off('NovaPergunta');
+    this.connection.off('ResultadoResposta');
     this.connection.off('JogadorRespondeu');
     this.connection.off('VidaAtualizada');
-    this.connection.off('JogoFinalizado');
+    this.connection.off('FimDeJogo');
   }
 
   /**

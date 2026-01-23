@@ -48,7 +48,7 @@ namespace CineBattle.Api.Controllers
                 niveisEnum.Add(nivelEnum);
             }
 
-            var pergunta = await _perguntaService.ObterPerguntaAleatoriaAsync(niveisEnum);
+            var pergunta = await _perguntaService.ObterPerguntaAleatoriaAsync(niveisEnum, new List<int>());
 
             if (pergunta == null)
                 return NotFound("Nenhuma pergunta encontrada");
