@@ -156,5 +156,18 @@ namespace CineBattle.Api.Controllers
                 }).ToList()
             });
         }
+
+        [HttpPost("{salaId}/aplicar-powerup")]
+        public async Task<IActionResult> AplicarPowerUp(int salaId, [FromBody] AplicarPowerUpDto dto)
+        {
+            dto.SalaId = salaId;
+            
+            var resultado = await _salaService.AplicarPowerUpAsync(dto);
+
+            if (!resultado.Sucesso)
+                return BadRequest(resultado.Erro);
+
+            return Ok(new { mensagem = "Power-up aplicado com sucesso", sucesso = true });
+        }
     }
 }

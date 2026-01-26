@@ -9,6 +9,7 @@ import type {
   RespostaResultado,
   SalaResponseDto,
   JogadorSala,
+  AplicarPowerUpDto,
 } from './types';
 
 export const salaService = {
@@ -91,6 +92,16 @@ export const salaService = {
    */
   responderPergunta: async (salaId: number, resposta: RespostaDto): Promise<RespostaResultado> => {
     return api.post<RespostaResultado>(`/Sala/${salaId}/responder`, resposta);
+  },
+
+  /**
+   * Aplica um power-up em um alvo
+   * @param salaId - ID da sala
+   * @param dto - Dados do power-up a aplicar
+   * @returns Resultado da operação
+   */
+  aplicarPowerUp: async (salaId: number, dto: AplicarPowerUpDto): Promise<ResultadoOperacao> => {
+    return api.post<ResultadoOperacao>(`/Sala/${salaId}/aplicar-powerup`, dto);
   },
 };
 

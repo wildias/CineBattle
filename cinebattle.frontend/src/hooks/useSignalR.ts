@@ -1,5 +1,6 @@
 import { useEffect, useRef } from 'react';
 import signalRService from '../services/signalRService';
+import type { AcaoPowerUpDto } from '../services/types';
 
 interface UseSignalRProps {
   salaId: number;
@@ -13,6 +14,7 @@ interface UseSignalRProps {
   onJogadorRespondeu?: (resultado: any) => void;
   onVidaAtualizada?: (jogadorId: number, vidaAtual: number) => void;
   onJogoFinalizado?: (vencedor: any) => void;
+  onAcaoPowerUp?: (acao: AcaoPowerUpDto) => void;
 }
 
 export const useSignalR = ({
@@ -27,6 +29,7 @@ export const useSignalR = ({
   onJogadorRespondeu,
   onVidaAtualizada,
   onJogoFinalizado,
+  onAcaoPowerUp,
 }: UseSignalRProps) => {
   const isConnecting = useRef(false);
 
@@ -71,7 +74,10 @@ export const useSignalR = ({
           signalRService.onVidaAtualizada(onVidaAtualizada);
         }
         if (onJogoFinalizado) {
-          signalRService.onJogoFinalizado(onJogoFinalizado);
+         
+        if (onAcaoPowerUp) {
+          signalRService.onAcaoPowerUp(onAcaoPowerUp);
+        } signalRService.onJogoFinalizado(onJogoFinalizado);
         }
 
         // Entra na sala se a conexão estiver estabelecida
@@ -104,6 +110,7 @@ export const useSignalR = ({
     onPartidaIniciada,
     onNovaPergunta,
     onResultadoResposta,
+    onAcaoPowerUp,
     onJogadorRespondeu,
     onVidaAtualizada,
     onJogoFinalizado,

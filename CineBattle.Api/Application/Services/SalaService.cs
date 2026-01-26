@@ -323,24 +323,46 @@ namespace CineBattle.Api.Application.Services
 
             if (!resultado.Correta)
             {
-                jogador.Vida -= 10; // Perde 10 pontos de vida
+                // Aplica dano considerando escudo
+                int danoRecebido = 10;
+                
+                if (jogador.EscudoAtivo > 0)
+                {
+                    if (jogador.EscudoAtivo >= danoRecebido)
+                    {
+                        jogador.EscudoAtivo -= danoRecebido;
+                        danoRecebido = 0;
+                    }
+                    else
+                    {
+                        danoRecebido -= jogador.EscudoAtivo;
+                        jogador.EscudoAtivo = 0;
+                        jogador.Vida -= danoRecebido;
+                    }
+                }
+                else
+                {
+                    jogador.Vida -= danoRecebido;
+                }
 
                 if (jogador.Vida <= 0)
                 {
                     jogador.Vida = 0;
-                    jogador.Vivo = false; // ✅ MARCA COMO MORTO
                     resultado.JogadorMorreu = true;
                 }
+            }
+            else
+            {
+                // ✅ Resposta correta: atribui power-up aleatório
+                var powerUpSorteado = SortearPowerUp();
+                jogador.PowerUpAtual = powerUpSorteado;
             }
 
             resultado.VidaRestante = jogador.Vida;
             resultado.Sucesso = true;
 
-            // Avança para o próximo jogador vivo
-            var jogadoresVivos = sala.Jogadores.Where(j => j.Vivo).ToList();
-            var indexAtual = jogadoresVivos.FindIndex(j => j.Id == sala.JogadorAtualId);
-            var proximoIndex = (indexAtual + 1) % jogadoresVivos.Count;
-            sala.JogadorAtualId = jogadoresVivos[proximoIndex].Id;
+            // Não avança turno aqui - jogador precisa aplicar power-up primeiro
+            // O turno só avança quando AplicarPowerUp for chamado
 
             // 🔔 EVENTO: RESULTADO DA RESPOSTA
             await _hub.Clients
@@ -353,7 +375,7 @@ namespace CineBattle.Api.Application.Services
                     respostaCorretaIndex = pergunta.RespostaCorretaIndex,
                     resultado.VidaRestante,
                     resultado.JogadorMorreu,
-                    proximoJogadorId = sala.JogadorAtualId
+                    powerUpRecebido = jogador.PowerUpAtual
                 });
 
             // 🔔 EVENTO: JOGADORES ATUALIZADOS
@@ -384,17 +406,191 @@ namespace CineBattle.Api.Application.Services
                         vencedor.Nome
                     });
             }
-            else
+            // Se acertou, não avança turno ainda (precisa usar power-up)
+            // Se errou, pode avançar direto
+            else if (!resultado.Correta)
             {
-                // Envia a próxima pergunta automaticamente
-                await Task.Delay(3000); // Aguarda 3 segundos
-                
-                using var scope2 = _serviceScopeFactory.CreateScope();
-                var perguntaService = scope2.ServiceProvider.GetRequiredService<PerguntaService>();
-                var novaPergunta = await SortearPerguntaAsync(salaId, perguntaService);
+                await AvancarTurnoAsync(salaId);
             }
 
             return resultado;
+        }
+
+        private PowerUpTipo SortearPowerUp()
+        {
+            var valores = Enum.GetValues<PowerUpTipo>();
+            var random = new Random();
+            return valores[random.Next(valores.Length)];
+        }
+
+        public async Task<ServiceResultDto> AplicarPowerUpAsync(AplicarPowerUpDto dto)
+        {
+            var result = new ServiceResultDto();
+
+            var sala = ObterSala(dto.SalaId);
+            if (sala == null || !sala.EmAndamento)
+            {
+                result.Erro = "Sala inválida";
+                return result;
+            }
+
+            var jogador = sala.Jogadores.FirstOrDefault(j => j.Id == dto.JogadorId);
+            if (jogador == null || !jogador.Vivo)
+            {
+                result.Erro = "Jogador inválido";
+                return result;
+            }
+
+            if (jogador.PowerUpAtual == null)
+            {
+                result.Erro = "Você não possui power-up para usar";
+                return result;
+            }
+
+            if (jogador.PowerUpAtual != dto.PowerUp)
+            {
+                result.Erro = "Power-up inválido";
+                return result;
+            }
+
+            // Processa o efeito do power-up
+            var acaoDto = await ProcessarEfeitoPowerUpAsync(sala, jogador, dto.PowerUp, dto.AlvoId);
+
+            // Remove o power-up usado
+            jogador.PowerUpAtual = null;
+
+            // 🔔 EVENTO: AÇÃO DO POWER-UP
+            await _hub.Clients
+                .Group(dto.SalaId.ToString())
+                .SendAsync("AcaoPowerUp", acaoDto);
+
+            // 🔔 EVENTO: JOGADORES ATUALIZADOS
+            await _hub.Clients
+                .Group(dto.SalaId.ToString())
+                .SendAsync("JogadoresAtualizados", new
+                {
+                    jogadores = MapearJogadores(sala),
+                    liderId = sala.LiderId,
+                    maxJogadores = sala.MaxJogadores
+                });
+
+            // Agora sim avança o turno
+            await AvancarTurnoAsync(dto.SalaId);
+
+            result.Sucesso = true;
+            return result;
+        }
+
+        private async Task<AcaoPowerUpDto> ProcessarEfeitoPowerUpAsync(
+            Sala sala, 
+            Jogador jogador, 
+            PowerUpTipo powerUp, 
+            int alvoId)
+        {
+            var acao = new AcaoPowerUpDto
+            {
+                JogadorOrigemId = jogador.Id,
+                JogadorOrigemNome = jogador.Nome,
+                PowerUp = powerUp
+            };
+
+            switch (powerUp)
+            {
+                case PowerUpTipo.Ataque:
+                    var alvoAtaque = sala.Jogadores.FirstOrDefault(j => j.Id == alvoId && j.Vivo);
+                    if (alvoAtaque != null)
+                    {
+                        int dano = 10;
+                        
+                        // Considera escudo
+                        if (alvoAtaque.EscudoAtivo > 0)
+                        {
+                            if (alvoAtaque.EscudoAtivo >= dano)
+                            {
+                                alvoAtaque.EscudoAtivo -= dano;
+                                acao.Mensagem = $"{jogador.Nome} atacou {alvoAtaque.Nome}, mas o escudo absorveu {dano} de dano!";
+                            }
+                            else
+                            {
+                                int danoNoEscudo = alvoAtaque.EscudoAtivo;
+                                int danoNaVida = dano - danoNoEscudo;
+                                alvoAtaque.EscudoAtivo = 0;
+                                alvoAtaque.Vida -= danoNaVida;
+                                acao.Mensagem = $"{jogador.Nome} atacou {alvoAtaque.Nome}. Escudo absorveu {danoNoEscudo} e causou {danoNaVida} pontos de dano!";
+                            }
+                        }
+                        else
+                        {
+                            alvoAtaque.Vida -= dano;
+                            acao.Mensagem = $"{jogador.Nome} atacou {alvoAtaque.Nome} e causou {dano} pontos de dano!";
+                        }
+
+                        if (alvoAtaque.Vida <= 0)
+                        {
+                            alvoAtaque.Vida = 0;
+                            acao.Mensagem += $" {alvoAtaque.Nome} foi derrotado!";
+                        }
+
+                        acao.JogadorAlvoId = alvoAtaque.Id;
+                        acao.JogadorAlvoNome = alvoAtaque.Nome;
+                        acao.Valor = dano;
+                    }
+                    break;
+
+                case PowerUpTipo.Escudo:
+                    int escudo = 10;
+                    jogador.EscudoAtivo += escudo;
+                    acao.Mensagem = $"{jogador.Nome} ativou um escudo de {escudo} pontos de proteção!";
+                    acao.Valor = escudo;
+                    break;
+
+                case PowerUpTipo.Cura:
+                    var alvoCura = sala.Jogadores.FirstOrDefault(j => j.Id == alvoId && j.Vivo);
+                    if (alvoCura != null)
+                    {
+                        int cura = 15;
+                        int vidaAntes = alvoCura.Vida;
+                        alvoCura.Vida = Math.Min(alvoCura.Vida + cura, 100);
+                        int curaReal = alvoCura.Vida - vidaAntes;
+                        
+                        if (alvoCura.Id == jogador.Id)
+                        {
+                            acao.Mensagem = $"{jogador.Nome} se curou e recuperou {curaReal} pontos de vida!";
+                        }
+                        else
+                        {
+                            acao.Mensagem = $"{jogador.Nome} curou {alvoCura.Nome} e restaurou {curaReal} pontos de vida!";
+                        }
+
+                        acao.JogadorAlvoId = alvoCura.Id;
+                        acao.JogadorAlvoNome = alvoCura.Nome;
+                        acao.Valor = curaReal;
+                    }
+                    break;
+            }
+
+            return acao;
+        }
+
+        private async Task AvancarTurnoAsync(int salaId)
+        {
+            var sala = ObterSala(salaId);
+            if (sala == null) return;
+
+            // Avança para o próximo jogador vivo
+            var jogadoresVivos = sala.Jogadores.Where(j => j.Vivo).ToList();
+            if (jogadoresVivos.Count <= 1) return; // Jogo acabou
+
+            var indexAtual = jogadoresVivos.FindIndex(j => j.Id == sala.JogadorAtualId);
+            var proximoIndex = (indexAtual + 1) % jogadoresVivos.Count;
+            sala.JogadorAtualId = jogadoresVivos[proximoIndex].Id;
+
+            // Envia a próxima pergunta automaticamente após delay
+            await Task.Delay(2000);
+            
+            using var scope = _serviceScopeFactory.CreateScope();
+            var perguntaService = scope.ServiceProvider.GetRequiredService<PerguntaService>();
+            await SortearPerguntaAsync(salaId, perguntaService);
         }
 
 
@@ -421,7 +617,9 @@ namespace CineBattle.Api.Application.Services
                 Id = j.Id,
                 Nome = j.Nome,
                 Vida = j.Vida,
-                Vivo = j.Vivo
+                Vivo = j.Vivo,
+                PowerUpAtual = j.PowerUpAtual,
+                EscudoAtivo = j.EscudoAtivo
             }).ToList();
         }
 
@@ -432,7 +630,9 @@ namespace CineBattle.Api.Application.Services
                 Id = j.Id,
                 Nome = j.Nome,
                 Vida = j.Vida,
-                Vivo = j.Vivo
+                Vivo = j.Vivo,
+                PowerUpAtual = j.PowerUpAtual,
+                EscudoAtivo = j.EscudoAtivo
             }).ToList();
         }
     }

@@ -1,6 +1,6 @@
 import { useState, useEffect, useRef } from 'react';
 import { useParams, useLocation, useNavigate } from 'react-router-dom';
-import type { JogadorSala } from '../services/types';
+import type { JogadorSala, PowerUpTipo, AcaoPowerUpDto } from '../services/types';
 import { useSignalR } from '../hooks/useSignalR';
 import salaService from '../services/salaService';
 import logo from '../assets/images/logo.png';
@@ -35,6 +35,9 @@ export const SalaPage = () => {
   const [jogadorDerrotado, setJogadorDerrotado] = useState(false);
   const [vencedor, setVencedor] = useState<{ id: number; nome: string } | null>(null);
   const [updateKey, setUpdateKey] = useState(0); // Força re-render
+  const [powerUpRecebido, setPowerUpRecebido] = useState<PowerUpTipo | null>(null);
+  const [mostrarSelecaoPowerUp, setMostrarSelecaoPowerUp] = useState(false);
+  const [notificacoes, setNotificacoes] = useState<AcaoPowerUpDto[]>([]);
   
   // Refs para evitar problemas de closure no timer
   const aguardandoRespostaRef = useRef(aguardandoResposta);
@@ -160,20 +163,33 @@ export const SalaPage = () => {
   };
 
   const handleJogoFinalizado = (data: any) => {
-    console.log('\ud83c\udfc6 FIM DE JOGO recebido!');
-    console.log('\ud83d\udc51 Vencedor:', data);
-    console.log('\ud83c\udfaf Vencedor ID:', data.id, '| Meu ID:', jogadorId);
+    console.log('🏆 FIM DE JOGO recebido!');
+    console.log('👑 Vencedor:', data);
+    console.log('🎯 Vencedor ID:', data.id, '| Meu ID:', jogadorId);
     
     setVencedor({ id: data.id, nome: data.nome });
     setTimerAtivo(false);
     setPerguntaAtual(null);
     setAguardandoResposta(false);
+    setMostrarSelecaoPowerUp(false);
     
     if (data.id === jogadorId) {
-      console.log('\ud83c\udfc6 EU VENCI!');
+      console.log('🏆 EU VENCI!');
     } else {
-      console.log('\ud83d\udc94 Outro jogador venceu');
+      console.log('💔 Outro jogador venceu');
     }
+  };
+
+  const handleAcaoPowerUp = (acao: AcaoPowerUpDto) => {
+    console.log('⚡ Ação de power-up recebida:', acao);
+    
+    // Adiciona à lista de notificações
+    setNotificacoes(prev => [...prev, acao]);
+    
+    // Remove após 5 segundos
+    setTimeout(() => {
+      setNotificacoes(prev => prev.filter(n => n !== acao));
+    }, 5000);
   };
 
   // Conecta ao SignalR
@@ -188,6 +204,7 @@ export const SalaPage = () => {
     onResultadoResposta: handleResultadoResposta,
     onJogadorRespondeu: handleJogadorRespondeu,
     onJogoFinalizado: handleJogoFinalizado,
+    onAcaoPowerUp: handleAcaoPowerUp,
   });
 
   useEffect(() => {
@@ -366,6 +383,46 @@ export const SalaPage = () => {
     } catch (error) {
       console.error('❌ Erro ao responder:', error);
       setAguardandoResposta(false);
+    }
+  };
+
+  const handleAplicarPowerUp = async (alvoId: number) => {
+    if (!jogadorId || !powerUpRecebido) {
+      console.log('⛔ Não pode aplicar power-up');
+      return;
+    }
+
+    try {
+      await salaService.aplicarPowerUp(Number(salaId), {
+        jogadorId,
+        powerUp: powerUpRecebido,
+        alvoId
+      });
+
+      setPowerUpRecebido(null);
+      setMostrarSelecaoPowerUp(false);
+      setPerguntaAtual(null);
+      console.log('✅ Power-up aplicado com sucesso!');
+    } catch (error) {
+      console.error('❌ Erro ao aplicar power-up:', error);
+    }
+  };
+
+  const getPowerUpNome = (tipo: PowerUpTipo): string => {
+    switch (tipo) {
+      case 1: return 'Ataque';
+      case 2: return 'Escudo';
+      case 3: return 'Cura';
+      default: return 'Power-Up';
+    }
+  };
+
+  const getPowerUpIcon = (tipo: PowerUpTipo): string => {
+    switch (tipo) {
+      case 1: return '⚔️';
+      case 2: return '🛡️';
+      case 3: return '💚';
+      default: return '⭐';
     }
   };
 
@@ -574,6 +631,60 @@ export const SalaPage = () => {
           </div>
         </div>
       )}
+
+      {/* Modal de Seleção de Power-Up */}
+      {mostrarSelecaoPowerUp && powerUpRecebido && (
+        <div className="modal-overlay">
+          <div className="modal-powerup">
+            <div className="powerup-header">
+              <span className="powerup-icon">{getPowerUpIcon(powerUpRecebido)}</span>
+              <h2>Você ganhou: {getPowerUpNome(powerUpRecebido)}!</h2>
+            </div>
+            
+            <p className="powerup-instrucao">
+              {powerUpRecebido === 1 && 'Escolha um jogador para atacar:'}
+              {powerUpRecebido === 2 && 'Aplicar escudo em você mesmo:'}
+              {powerUpRecebido === 3 && 'Escolha quem curar:'}
+            </p>
+            
+            <div className="powerup-alvos">
+              {powerUpRecebido === 2 ? (
+                <button
+                  className="powerup-alvo-btn"
+                  onClick={() => handleAplicarPowerUp(jogadorId!)}
+                >
+                  <span className="alvo-icon">🛡️</span>
+                  <span className="alvo-nome">Você</span>
+                </button>
+              ) : (
+                jogadores
+                  .filter(j => j.vivo && (powerUpRecebido === 1 ? j.id !== jogadorId : true))
+                  .map(jogador => (
+                    <button
+                      key={jogador.id}
+                      className="powerup-alvo-btn"
+                      onClick={() => handleAplicarPowerUp(jogador.id)}
+                    >
+                      <span className="alvo-icon">🎭</span>
+                      <span className="alvo-nome">{jogador.nome}</span>
+                      <span className="alvo-vida">❤️ {jogador.vida}</span>
+                    </button>
+                  ))
+              )}
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Área de Notificações */}
+      <div className="notificacoes-container">
+        {notificacoes.map((notif, index) => (
+          <div key={index} className="notificacao-item">
+            <span className="notif-icon">{getPowerUpIcon(notif.powerUp)}</span>
+            <span className="notif-texto">{notif.mensagem}</span>
+          </div>
+        ))}
+      </div>
     </div>
   );
 };

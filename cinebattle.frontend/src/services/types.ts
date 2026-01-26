@@ -49,9 +49,33 @@ export interface SalaResponseDto {
   estaCheia: boolean;
 }
 
+export enum PowerUpTipo {
+  Ataque = 1,
+  Escudo = 2,
+  Cura = 3
+}
+
 export interface JogadorSala {
   id: number;
   nome: string;
   vida: number;
   vivo: boolean;
+  powerUpAtual?: PowerUpTipo;
+  escudoAtivo?: number;
+}
+
+export interface AplicarPowerUpDto {
+  jogadorId: number;
+  powerUp: PowerUpTipo;
+  alvoId: number;
+}
+
+export interface AcaoPowerUpDto {
+  mensagem: string;
+  jogadorOrigemId: number;
+  jogadorOrigemNome: string;
+  jogadorAlvoId?: number;
+  jogadorAlvoNome?: string;
+  powerUp: PowerUpTipo;
+  valor: number;
 }

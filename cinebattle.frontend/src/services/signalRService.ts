@@ -134,6 +134,14 @@ class SignalRService {
   }
 
   /**
+   * Registra callback para quando um power-up for usado
+   */
+  onAcaoPowerUp(callback: (acao: any) => void): void {
+    if (!this.connection) return;
+    this.connection.on('AcaoPowerUp', callback);
+  }
+
+  /**
    * Remove todos os listeners de eventos
    */
   removeAllListeners(): void {
@@ -148,6 +156,7 @@ class SignalRService {
     this.connection.off('JogadorRespondeu');
     this.connection.off('VidaAtualizada');
     this.connection.off('FimDeJogo');
+    this.connection.off('AcaoPowerUp');
   }
 
   /**
