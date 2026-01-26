@@ -4,6 +4,9 @@ import type { JogadorSala, PowerUpTipo, AcaoPowerUpDto } from '../services/types
 import { useSignalR } from '../hooks/useSignalR';
 import salaService from '../services/salaService';
 import logo from '../assets/images/logo.png';
+import ataquePng from '../assets/images/powerUp/Ataque.png';
+import escudoPng from '../assets/images/powerUp/Escudo.png';
+import curaPng from '../assets/images/powerUp/Cura.png';
 import '../styles/SalaPage.css';
 
 interface EstadoSala {
@@ -142,6 +145,7 @@ export const SalaPage = () => {
     console.log('\u2620\ufe0f JogadorMorreu:', resultado.jogadorMorreu);
     console.log('\ud83c\udfaf JogadorId:', resultado.jogadorId, '| Meu ID:', jogadorId);
     console.log('\u2764\ufe0f Vida restante:', resultado.vidaRestante);
+    console.log('⚡ PowerUp recebido:', resultado.powerUpRecebido);
     
     // Verifica se o jogador atual morreu
     if (resultado.jogadorMorreu && resultado.jogadorId === jogadorId) {
@@ -149,6 +153,13 @@ export const SalaPage = () => {
       setJogadorDerrotado(true);
       setTimerAtivo(false);
       setPerguntaAtual(null);
+    }
+    
+    // Verifica se o jogador atual recebeu um power-up
+    if (resultado.powerUpRecebido && resultado.jogadorId === jogadorId && resultado.correta) {
+      console.log('⚡ Recebi um power-up:', resultado.powerUpRecebido);
+      setPowerUpRecebido(resultado.powerUpRecebido);
+      setMostrarSelecaoPowerUp(true);
     }
     
     // Aguarda o evento JogadoresAtualizados para sincronizar vidas
@@ -426,6 +437,24 @@ export const SalaPage = () => {
     }
   };
 
+  const getPowerUpImagem = (tipo: PowerUpTipo): string => {
+    switch (tipo) {
+      case 1: return ataquePng; // Ataque
+      case 2: return escudoPng; // Escudo
+      case 3: return curaPng;   // Cura
+      default: return '';
+    }
+  };
+
+  const getPowerUpDescricao = (tipo: PowerUpTipo): string => {
+    switch (tipo) {
+      case 1: return 'Ataca um oponente causando 10 de dano';
+      case 2: return 'Cria um escudo de 10 pontos de proteção';
+      case 3: return 'Restaura 10 pontos de vida';
+      default: return '';
+    }
+  };
+
   return (
     <div className="sala-page">
       <div className="background-overlay"></div>
@@ -634,40 +663,67 @@ export const SalaPage = () => {
 
       {/* Modal de Seleção de Power-Up */}
       {mostrarSelecaoPowerUp && powerUpRecebido && (
-        <div className="modal-overlay">
+        <div className="modal-overlay powerup-overlay">
           <div className="modal-powerup">
             <div className="powerup-header">
-              <span className="powerup-icon">{getPowerUpIcon(powerUpRecebido)}</span>
-              <h2>Você ganhou: {getPowerUpNome(powerUpRecebido)}!</h2>
+              <h2 className="powerup-titulo">🎁 Power-Up Recebido!</h2>
+            </div>
+            
+            <div className="powerup-imagem-container">
+              <img 
+                src={getPowerUpImagem(powerUpRecebido)} 
+                alt={getPowerUpNome(powerUpRecebido)}
+                className="powerup-imagem-grande"
+              />
+              <h3 className="powerup-nome">{getPowerUpNome(powerUpRecebido)}</h3>
+              <p className="powerup-descricao">{getPowerUpDescricao(powerUpRecebido)}</p>
             </div>
             
             <p className="powerup-instrucao">
-              {powerUpRecebido === 1 && 'Escolha um jogador para atacar:'}
-              {powerUpRecebido === 2 && 'Aplicar escudo em você mesmo:'}
-              {powerUpRecebido === 3 && 'Escolha quem curar:'}
+              {powerUpRecebido === 1 && '⚔️ Escolha um oponente para atacar:'}
+              {powerUpRecebido === 2 && '🛡️ Clique para aplicar o escudo em você:'}
+              {powerUpRecebido === 3 && '💚 Escolha um jogador para curar:'}
             </p>
             
             <div className="powerup-alvos">
               {powerUpRecebido === 2 ? (
+                // Escudo: aplica apenas no próprio jogador
                 <button
-                  className="powerup-alvo-btn"
+                  className="powerup-alvo-btn escudo-btn"
                   onClick={() => handleAplicarPowerUp(jogadorId!)}
                 >
                   <span className="alvo-icon">🛡️</span>
-                  <span className="alvo-nome">Você</span>
+                  <span className="alvo-nome">Aplicar Escudo</span>
+                  <span className="alvo-info">+10 de proteção</span>
                 </button>
-              ) : (
+              ) : powerUpRecebido === 1 ? (
+                // Ataque: escolhe oponentes vivos (exceto você)
                 jogadores
-                  .filter(j => j.vivo && (powerUpRecebido === 1 ? j.id !== jogadorId : true))
+                  .filter(j => j.vivo && j.id !== jogadorId)
                   .map(jogador => (
                     <button
                       key={jogador.id}
-                      className="powerup-alvo-btn"
+                      className="powerup-alvo-btn ataque-btn"
                       onClick={() => handleAplicarPowerUp(jogador.id)}
                     >
                       <span className="alvo-icon">🎭</span>
                       <span className="alvo-nome">{jogador.nome}</span>
-                      <span className="alvo-vida">❤️ {jogador.vida}</span>
+                      <span className="alvo-vida">❤️ {jogador.vida} HP</span>
+                    </button>
+                  ))
+              ) : (
+                // Cura: escolhe qualquer jogador vivo (incluindo você)
+                jogadores
+                  .filter(j => j.vivo)
+                  .map(jogador => (
+                    <button
+                      key={jogador.id}
+                      className="powerup-alvo-btn cura-btn"
+                      onClick={() => handleAplicarPowerUp(jogador.id)}
+                    >
+                      <span className="alvo-icon">{jogador.id === jogadorId ? '💚' : '🎭'}</span>
+                      <span className="alvo-nome">{jogador.id === jogadorId ? 'Você' : jogador.nome}</span>
+                      <span className="alvo-vida">❤️ {jogador.vida} HP</span>
                     </button>
                   ))
               )}
