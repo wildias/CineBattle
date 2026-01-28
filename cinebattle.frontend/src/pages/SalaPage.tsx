@@ -141,25 +141,41 @@ export const SalaPage = () => {
   };
 
   const handleResultadoResposta = (resultado: any) => {
-    console.log('\ud83d\udcca Resultado da resposta completo:', resultado);
-    console.log('\u2620\ufe0f JogadorMorreu:', resultado.jogadorMorreu);
-    console.log('\ud83c\udfaf JogadorId:', resultado.jogadorId, '| Meu ID:', jogadorId);
-    console.log('\u2764\ufe0f Vida restante:', resultado.vidaRestante);
+    console.log('📊 ========== RESULTADO RESPOSTA ==========');
+    console.log('Objeto completo:', JSON.stringify(resultado, null, 2));
+    console.log('☠️ JogadorMorreu:', resultado.jogadorMorreu);
+    console.log('🎯 JogadorId:', resultado.jogadorId, '| Meu ID:', jogadorId);
+    console.log('❤️ Vida restante:', resultado.vidaRestante);
     console.log('⚡ PowerUp recebido:', resultado.powerUpRecebido);
+    console.log('✅ Correta?:', resultado.correta);
+    console.log('🔍 Tipos - powerUpRecebido:', typeof resultado.powerUpRecebido);
+    console.log('🔍 Condições:');
+    console.log('  - Tem powerUp?', !!resultado.powerUpRecebido);
+    console.log('  - É meu ID?', resultado.jogadorId === jogadorId);
+    console.log('  - Foi correta?', resultado.correta);
+    console.log('==========================================');
     
     // Verifica se o jogador atual morreu
     if (resultado.jogadorMorreu && resultado.jogadorId === jogadorId) {
-      console.log('\ud83d\udd34 MEU JOGADOR FOI DERROTADO!');
+      console.log('🔴 MEU JOGADOR FOI DERROTADO!');
       setJogadorDerrotado(true);
       setTimerAtivo(false);
       setPerguntaAtual(null);
     }
     
     // Verifica se o jogador atual recebeu um power-up
-    if (resultado.powerUpRecebido && resultado.jogadorId === jogadorId && resultado.correta) {
-      console.log('⚡ Recebi um power-up:', resultado.powerUpRecebido);
+    // Remove a verificação de resultado.correta pois pode não estar sendo enviado
+    if (resultado.powerUpRecebido && resultado.jogadorId === jogadorId) {
+      console.log('⚡ RECEBENDO POWER-UP:', resultado.powerUpRecebido);
+      console.log('🎯 Abrindo modal de seleção automaticamente...');
+      console.log('📍 Estado atual - powerUpRecebido:', powerUpRecebido, '| mostrarSelecao:', mostrarSelecaoPowerUp);
       setPowerUpRecebido(resultado.powerUpRecebido);
       setMostrarSelecaoPowerUp(true);
+      setPerguntaAtual(null); // Limpa pergunta atual para focar no power-up
+    } else if (resultado.powerUpRecebido && resultado.jogadorId !== jogadorId) {
+      console.log('👀 Outro jogador recebeu power-up. JogadorId:', resultado.jogadorId);
+    } else if (!resultado.powerUpRecebido) {
+      console.log('❌ Nenhum power-up neste resultado');
     }
     
     // Aguarda o evento JogadoresAtualizados para sincronizar vidas
@@ -661,35 +677,66 @@ export const SalaPage = () => {
         </div>
       )}
 
-      {/* Modal de Seleção de Power-Up */}
+      {/* Power-Up Disponível - Ícone Clicável */}
+      {powerUpRecebido && !mostrarSelecaoPowerUp && (
+        <div 
+          className="powerup-icone-container"
+          onClick={() => setMostrarSelecaoPowerUp(true)}
+          title={`Clique para usar: ${getPowerUpNome(powerUpRecebido)}`}
+        >
+          <div className="powerup-icone-badge">
+            <img 
+              src={getPowerUpImagem(powerUpRecebido)} 
+              alt={getPowerUpNome(powerUpRecebido)}
+              className="powerup-icone-img"
+            />
+            <div className="powerup-icone-pulse"></div>
+          </div>
+          <div className="powerup-icone-tooltip">
+            {getPowerUpNome(powerUpRecebido)}
+          </div>
+        </div>
+      )}
+
+      {/* Modal de Seleção de Alvo do Power-Up */}
       {mostrarSelecaoPowerUp && powerUpRecebido && (
         <div className="modal-overlay powerup-overlay">
-          <div className="modal-powerup">
-            <div className="powerup-header">
-              <h2 className="powerup-titulo">🎁 Power-Up Recebido!</h2>
-            </div>
+          <div className="modal-powerup-compact" onClick={(e) => e.stopPropagation()}>
+            <button 
+              className="powerup-fechar"
+              onClick={() => {
+                console.log('❌ Fechando modal sem aplicar power-up');
+                setMostrarSelecaoPowerUp(false);
+                setPowerUpRecebido(null);
+              }}
+              title="Descartar power-up"
+            >
+              ✕
+            </button>
             
-            <div className="powerup-imagem-container">
+            <div className="powerup-header-compact">
               <img 
                 src={getPowerUpImagem(powerUpRecebido)} 
                 alt={getPowerUpNome(powerUpRecebido)}
-                className="powerup-imagem-grande"
+                className="powerup-imagem-compact"
               />
-              <h3 className="powerup-nome">{getPowerUpNome(powerUpRecebido)}</h3>
-              <p className="powerup-descricao">{getPowerUpDescricao(powerUpRecebido)}</p>
+              <div className="powerup-info-compact">
+                <h3 className="powerup-nome-compact">{getPowerUpNome(powerUpRecebido)}</h3>
+                <p className="powerup-descricao-compact">{getPowerUpDescricao(powerUpRecebido)}</p>
+              </div>
             </div>
             
-            <p className="powerup-instrucao">
+            <p className="powerup-instrucao-compact">
               {powerUpRecebido === 1 && '⚔️ Escolha um oponente para atacar:'}
               {powerUpRecebido === 2 && '🛡️ Clique para aplicar o escudo em você:'}
               {powerUpRecebido === 3 && '💚 Escolha um jogador para curar:'}
             </p>
             
-            <div className="powerup-alvos">
+            <div className="powerup-alvos-compact">
               {powerUpRecebido === 2 ? (
                 // Escudo: aplica apenas no próprio jogador
                 <button
-                  className="powerup-alvo-btn escudo-btn"
+                  className="powerup-alvo-btn-compact escudo-btn"
                   onClick={() => handleAplicarPowerUp(jogadorId!)}
                 >
                   <span className="alvo-icon">🛡️</span>
@@ -703,7 +750,7 @@ export const SalaPage = () => {
                   .map(jogador => (
                     <button
                       key={jogador.id}
-                      className="powerup-alvo-btn ataque-btn"
+                      className="powerup-alvo-btn-compact ataque-btn"
                       onClick={() => handleAplicarPowerUp(jogador.id)}
                     >
                       <span className="alvo-icon">🎭</span>
@@ -718,7 +765,7 @@ export const SalaPage = () => {
                   .map(jogador => (
                     <button
                       key={jogador.id}
-                      className="powerup-alvo-btn cura-btn"
+                      className="powerup-alvo-btn-compact cura-btn"
                       onClick={() => handleAplicarPowerUp(jogador.id)}
                     >
                       <span className="alvo-icon">{jogador.id === jogadorId ? '💚' : '🎭'}</span>
@@ -728,6 +775,17 @@ export const SalaPage = () => {
                   ))
               )}
             </div>
+            
+            <button 
+              className="powerup-descartar-btn"
+              onClick={() => {
+                console.log('🗑️ Descartando power-up');
+                setPowerUpRecebido(null);
+                setMostrarSelecaoPowerUp(false);
+              }}
+            >
+              Descartar Power-Up
+            </button>
           </div>
         </div>
       )}
